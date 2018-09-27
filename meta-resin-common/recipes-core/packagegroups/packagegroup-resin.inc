@@ -10,6 +10,7 @@ RDEPENDS_${PN} = " \
     ${RESIN_INIT_PACKAGE} \
     ${RESIN_MOUNTS} \
     ${RESIN_REGISTER} \
+    balena-custom-udev-rules \
     chrony \
     chronyc \
     resin-extra-udev-rules \
