@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+. /usr/sbin/resin-vars
+
+keys=`jq -r 'select(.settings != null) | select(.settings.udevrules != null) | .settings.udevrules | keys[] ' $CONFIG_PATH`
+
+mkdir -p /run/udev/rules.d
+
+if [ ! -z "$keys" ]; then
+  echo "Found custom udev rules in $CONFIG_PATH"
+  while read -r key; do
+    echo "Adding custom udev rule: $key"
+    filter="'.settings.udevrules.\"$key\" []'"
+    cmd="jq -r $filter $CONFIG_PATH"
+    eval $cmd > /run/udev/rules.d/$key.rules
+  done <<< "$keys"
+ echo "Wait for udev to settle"
+ udevadm settle
+ echo "Reloading udev rules"
+ udevadm control --reload-rules
+ echo "Triggering udev"
+ udevadm trigger
+else
+  echo "No custom udev rules found in $CONFIG_PATH"
+fi
+
+exit 0
