@@ -1,0 +1,59 @@
+diff --git a/plugins/Makefile.am b/plugins/Makefile.am
+index 17a21a0d..3b555194 100644
+--- a/plugins/Makefile.am
++++ b/plugins/Makefile.am
+@@ -424,8 +424,9 @@ libmm_plugin_sierra_la_SOURCES = \
+ 	sierra/mm-plugin-sierra.c \
+ 	sierra/mm-plugin-sierra.h \
+ 	$(NULL)
+-libmm_plugin_sierra_la_CPPFLAGS = $(PLUGIN_COMMON_COMPILER_FLAGS)
++libmm_plugin_sierra_la_CPPFLAGS = $(PLUGIN_COMMON_COMPILER_FLAGS) $(XMM_COMMON_COMPILER_FLAGS)
+ libmm_plugin_sierra_la_LDFLAGS  = $(PLUGIN_COMMON_LINKER_FLAGS)
++libmm_plugin_sierra_la_LIBADD   = $(XMM_COMMON_LIBADD_FLAGS)
+ 
+ ################################################################################
+ # plugin: sierra (legacy)
+diff --git a/plugins/sierra/mm-plugin-sierra.c b/plugins/sierra/mm-plugin-sierra.c
+index 03a06bd8..dc06260d 100644
+--- a/plugins/sierra/mm-plugin-sierra.c
++++ b/plugins/sierra/mm-plugin-sierra.c
+@@ -32,6 +32,7 @@
+ 
+ #if defined WITH_MBIM
+ #include "mm-broadband-modem-mbim.h"
++#include "mm-broadband-modem-mbim-xmm.h"
+ #endif
+ 
+ G_DEFINE_TYPE (MMPluginSierra, mm_plugin_sierra, MM_TYPE_PLUGIN)
+@@ -63,6 +64,14 @@ create_modem (MMPlugin *self,
+ 
+ #if defined WITH_MBIM
+     if (mm_port_probe_list_has_mbim_port (probes)) {
++        if (mm_port_probe_list_is_xmm (probes)) {
++            mm_dbg ("MBIM-powered XMM-based Sierra modem found...");
++            return MM_BASE_MODEM (mm_broadband_modem_mbim_xmm_new (uid,
++                                                                   drivers,
++                                                                   mm_plugin_get_name (self),
++                                                                   vendor,
++                                                                   product));
++        }
+         mm_dbg ("MBIM-powered Sierra modem found...");
+         return MM_BASE_MODEM (mm_broadband_modem_mbim_new (uid,
+                                                            drivers,
+@@ -86,7 +95,7 @@ G_MODULE_EXPORT MMPlugin *
+ mm_plugin_create (void)
+ {
+     static const gchar *subsystems[] = { "tty", "net", "usb", NULL };
+-    static const guint16 vendor_ids[] = { 0x1199, 0 };
++    static const guint16 vendor_ids[] = { 0x1199, 0x8087, 0 };
+     static const gchar *drivers[] = { "qmi_wwan", "cdc_mbim", NULL };
+ 
+     return MM_PLUGIN (
+@@ -99,6 +108,7 @@ mm_plugin_create (void)
+                       MM_PLUGIN_ALLOWED_QCDM,       TRUE,
+                       MM_PLUGIN_ALLOWED_QMI,        TRUE,
+                       MM_PLUGIN_ALLOWED_MBIM,       TRUE,
++                      MM_PLUGIN_XMM_PROBE,          TRUE,
+                       NULL));
+ }
+ 
